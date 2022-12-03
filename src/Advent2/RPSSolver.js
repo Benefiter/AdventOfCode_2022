@@ -1,7 +1,7 @@
 const f = require('fs');
 const readline = require('readline');
 const lib = require('./lib');
-const user_file = './ElfRPS.data';
+const user_file = './rucksack.data';
 const r = readline.createInterface({
     input: f.createReadStream(user_file)
 });
