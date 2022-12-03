@@ -1,10 +1,6 @@
-const f = require('fs');
-const readline = require('readline');
-const { splitEqually, getTotalPriorities } = require('./lib');
+const { splitEqually, getTotalPriorities, getFileReader } = require('./lib');
 const user_file = './rucksack.data';
-const r = readline.createInterface({
-    input: f.createReadStream(user_file)
-});
+const r = getFileReader(user_file);
 let total = 0;
 const priorities = [];
 r.on('line', function (text) {
@@ -17,10 +13,12 @@ r.on('line', function (text) {
         const { firstHalf, secondHalf } = splitEqually(text);
 
         let dup;
-        firstHalf.forEach(v => {
+        firstHalf.every(v => {
             if (secondHalf.includes(v)) {
                 dup = v;
+                return false;
             }
+            return true;
         })
         priorities.push(dup);
     }
