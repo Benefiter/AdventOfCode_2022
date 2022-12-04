@@ -1,5 +1,5 @@
 const { getTotalPriorities, getFileReader } = require('./lib');
-const user_file = './rucksack.data';
+const user_file = './assignmentPairs.data';
 const r = getFileReader(user_file);
 
 let total = 0;
