@@ -1,4 +1,4 @@
-const { getFileReader } = require('./lib');
+const { getFileReader, getArrayOfRange } = require('./lib');
 const user_file = './moves.data';
 const r = getFileReader(user_file);
 let total = 0;
@@ -10,15 +10,11 @@ r.on('line', function (text) {
         const [firstAss, secondAss]  = text.split(',');
         const fr = firstAss.split('-');
         const sr = secondAss.split('-');
-        console.log({fr,sr});
-        if ((+fr[0] >= +sr[0]) && (+fr[1] <= +sr[1]) ||
-            (+sr[0] >= +fr[0]) && (+sr[1] <= +fr[1])){
+        const firstArr = getArrayOfRange(+fr[0], +fr[1]);
+        const secondArr = getArrayOfRange(+sr[0], +sr[1]);
+        const set = new Set([...firstArr, ...secondArr]);
+        if (set.size !== firstArr.length + secondArr.length) {
             total++;
-        }else{
-            if ((+fr[1] >= +sr[0]) && (+fr[1] <= +sr[1]) ||
-                (+sr[1] >= +fr[0]) && (+sr[1] <= +fr[1])){
-                total++;
-            }
         }
     }
 });

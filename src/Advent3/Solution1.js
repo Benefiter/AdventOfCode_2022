@@ -1,5 +1,5 @@
 const { splitEqually, getTotalPriorities, getFileReader } = require('./lib');
-const user_file = './assignmentPairs.data';
+const user_file = './moves.data';
 const r = getFileReader(user_file);
 let total = 0;
 const priorities = [];
