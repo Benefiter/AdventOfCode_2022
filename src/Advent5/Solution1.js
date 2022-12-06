@@ -20,7 +20,7 @@ const stacks = [
 ];
 
 const { getFileReader, getMoveData } = require('./lib');
-const user_file = './moves.data';
+const user_file = './markers.data';
 const r = getFileReader(user_file);
 r.on('line', function (text) {
     if (text.startsWith('end')) {

@@ -30,7 +30,7 @@ const processResults = () => {
 }
 const f = require('fs');
 const readline = require('readline');
-const user_file = './moves.data';
+const user_file = './markers.data';
 const r = readline.createInterface({
     input : f.createReadStream(user_file)
 });
