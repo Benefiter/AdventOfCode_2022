@@ -159,10 +159,6 @@ class FolderData2 extends FolderData {
     }
 }
 module.exports.getFileReader = getFileReader;
-module.exports.print = print;
-module.exports.calcFolderSizes = calcFolderSizes;
-module.exports.calcSumFoldersSmallerThanMaxFolderSize = calcSumFoldersSmallerThanMaxFolderSize;
-module.exports.determineSizeOfFolderToDelete = determineSizeOfFolderToDelete;
 module.exports.FolderData = FolderData;
 module.exports.FolderData2 = FolderData2;
 
