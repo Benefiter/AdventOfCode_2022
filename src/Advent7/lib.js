@@ -70,66 +70,121 @@ class FolderData {
         console.log({ result: calcSumFoldersSmallerThanMaxFolderSize(this.rootFolder) });
     }
 
+    finishedProcessing(text) {
+        return text.startsWith('end');
+    }
+
+    isCommand(text) {
+        return text.startsWith('$');
+    }
+
+    commandIsNavigateToParentFolder(cmd) {
+        return cmd === '..';
+    }
+
+    isRootFolder(folder) {
+        return folder === '/';
+    }
+    addFolder(name){
+        this.parentFolder = this.currentFolder;
+        this.currentFolder = this.parentFolder.folders.find(f => f.name === name);
+        if (!this.currentFolder) {
+            this.currentFolder = {
+                name,
+                files: [],
+                folders: [],
+                parent: this.parentFolder
+            };
+            this.parentFolder.folders.push(this.currentFolder);
+        }
+    }
+    handleCDCommand(command) {
+        this.currentCommand = 'cd';
+        const folder = command[2];
+        if (this.commandIsNavigateToParentFolder(folder)) {
+            // cd ..
+            this.currentFolder = this.currentFolder.parent;
+            this.parentFolder = this.currentFolder.parent;
+        } else if (this.isRootFolder(folder)) {
+            // root folder
+            this.currentFolder = this.rootFolder;
+            this.parentFolder = null;
+        } else {
+            // add folder
+            this.addFolder(folder)
+        }
+    }
+
+    folderData(val) {
+        return val === 'dir'
+    }
+
+    getFile(fileName) {
+        return this.currentFolder.files.find((f) => f.name === fileName);
+    }
+
+    addFileStatToThisFolder(fileName, fileSize) {
+        this.currentFolder.files.push({ name: fileName, size: fileSize });
+    }
+
+    getFolder(folderName) {
+        return this.currentFolder.folders.find((f) => f.name === folderName);
+    }
+
+    addFolderStatToCurrentFolder(name) {
+        this.currentFolder.folders.push({
+            name,
+            folders: [],
+            files: [],
+            parent: this.currentFolder
+        });
+    }
+
+    handleLSOutput(text) {
+        const lsLine = text.split(' ');
+        if (this.folderData(lsLine[0])) {
+            // folder data...
+            const f = this.getFolder(lsLine[1]);
+            if (!f) {
+                this.addFolderStatToCurrentFolder(lsLine[1]);
+            }
+        } else {
+            // file data...
+            const file = this.getFile(lsLine[1]);
+            if (file) {
+                file.size = lsLine[0];
+            } else {
+                this.addFileStatToThisFolder(lsLine[1], +lsLine[0]);
+            }
+        }
+    }
+
+    processCommand(text) {
+        // process command ls or cd or
+        const command = text.split(' ');
+        // console.log({command});
+        switch (command[1]) {
+            case 'cd':
+                this.handleCDCommand(command);
+                break;
+            case 'ls':
+                this.currentCommand = 'ls';
+                break;
+            default:
+                console.log('unknown command');
+                break;
+        }
+    }
+
     process(text) {
-        if (text.startsWith('end')) {
+        if (this.finishedProcessing(text)) {
             this.showResults();
         } else {
-            if (text.startsWith('$')) {
-                // process command ls or cd or
-                const command = text.split(' ');
-                // console.log({command});
-                switch (command[1]) {
-                    case 'cd':
-                        this.currentCommand = 'cd';
-                        const folder = command[2];
-                        if (folder === '..') {
-                            this.currentFolder = this.currentFolder.parent;
-                            this.parentFolder = this.currentFolder.parent;
-                        } else if (folder === '/') {
-                            this.currentFolder = this.rootFolder;
-                            this.parentFolder = null;
-                        } else {
-                            this.parentFolder = this.currentFolder;
-                            this.currentFolder = this.parentFolder.folders.find(f => f.name === folder);
-                            if (!this.currentFolder) {
-                                this.currentFolder = {
-                                    name: folder,
-                                    files: [],
-                                    folders: [],
-                                    parent: this.parentFolder
-                                };
-                                this.parentFolder.folders.push(this.currentFolder);
-                            }
-                        }
-                        break;
-                    case 'ls':
-                        this.currentCommand = 'ls';
-                        break;
-                    default:
-                        console.log('unknown command');
-                        break;
-                }
+            if (this.isCommand(text)) {
+                this.processCommand(text);
             } else {
                 if (this.currentCommand === 'ls') {
-                    const lsLine = text.split(' ');
-                    if (lsLine[0] === 'dir') {
-                        const f = this.currentFolder.folders.find((f) => f.name === lsLine[1]);
-                        if (!f) {
-                            this.currentFolder.folders.push({
-                                name: lsLine[1],
-                                folders: [],
-                                files: [],
-                                parent: this.currentFolder
-                            });
-                        }
-                    } else {
-                        const file = this.currentFolder.files.find((f) => f.name === lsLine[1]);
-                        if (file) {
-                            file.size = lsLine[0];
-                        } else {
-                            this.currentFolder.files.push({ name: lsLine[1], size: +lsLine[0] });
-                        }
-                    }
+                    this.handleLSOutput(text);
                 }
             }
         }
@@ -143,21 +198,28 @@ class FolderData2 extends FolderData {
         this.minSpaceForUpdate = 30000000;
     }
 
-    showResults() {
-        calcFolderSizes(this.rootFolder);
-        // print(this.rootFolder);
+    getRequiredSpaceToFreeUp() {
         const usedSpace = this.rootFolder.size;
         const availableSpace = this.totalDiskSpace - usedSpace;
-        const requiredSpaceToFreeUp = this.minSpaceForUpdate - availableSpace;
-        console.log({usedSpace, availableSpace, requiredSpaceToFreeUp});
-        const choices = determineSizeOfFolderToDelete(this.rootFolder, requiredSpaceToFreeUp);
-        const result = choices.reduce((acc, cur) => {
+        //console.log({ usedSpace, availableSpace, requiredSpaceToFreeUp });
+        return this.minSpaceForUpdate - availableSpace;
+    }
+
+    getSmallestFolderToGiveRequiredFreeSpace(choices) {
+        return choices.reduce((acc, cur) => {
             acc = cur < acc ? cur : acc;
             return acc;
-        },Array.isArray(choices) ? choices[0] : 0);
-        console.log({result});
+        }, Array.isArray(choices) ? choices[0] : 0);
+    }
+
+    showResults() {
+        calcFolderSizes(this.rootFolder);
+        const choices = determineSizeOfFolderToDelete(this.rootFolder, this.getRequiredSpaceToFreeUp());
+        const result = this.getSmallestFolderToGiveRequiredFreeSpace(choices);
+        console.log({ result });
     }
 }
+
 module.exports.getFileReader = getFileReader;
 module.exports.FolderData = FolderData;
 module.exports.FolderData2 = FolderData2;
