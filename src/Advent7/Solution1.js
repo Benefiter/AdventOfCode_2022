@@ -1,4 +1,4 @@
-const { getFileReader } = require('./lib');
+const { getFileReader, print, calcFolderSizes, calcSumFoldersSmallerThanMaxFolderSize } = require('./lib');
 const user_file = './commands.data';
 const r = getFileReader(user_file);
 const rootFolder = {
@@ -7,42 +7,9 @@ const rootFolder = {
     folders: [],
     parentFolder: null,
 }
-const maxFolderSize = 100000;
 let currentFolder = rootFolder;
 let parentFolder = null;
 let currentCommand = null;
-const print = (folder, level = 0) => {
-    let padding = '';
-    for (let i = 0; i < level; i++) {
-        padding += '-';
-    }
-    const {name, files, folders, size: folderSize } = folder;
-    console.log(`${padding} Directory: ${name} ${folderSize}`);
-    files.forEach((file) => {
-        const {name, size} = file;
-        console.log(`${padding} ${name} ${size}`);
-    });
-    folders.forEach((f) => print(f, level+1));
-}
-const calcFileTotal = (files) => {
-    return files.reduce((acc, curr) => {
-        acc += curr.size;
-        return acc;
-    },0);
-}
-const calcFolderSizes = (folder) => {
-    folder.size = calcFileTotal(folder.files) + folder.folders.reduce((acc, curr) => {
-       acc += calcFolderSizes(curr);
-       return acc;
-    },0);
-    return folder.size;
-};
-const calcSumFoldersSmallerThanMaxFolderSize = (folder) => {
-    return folder.folders.reduce((acc, cur) => {
-        acc += calcSumFoldersSmallerThanMaxFolderSize(cur);
-        return acc;
-    }, folder.size <= maxFolderSize ? folder.size : 0);
-};
 
 r.on('line', function (text) {
     if (text.startsWith('end')) {
