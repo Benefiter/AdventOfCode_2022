@@ -110,46 +110,46 @@ class Solution2 extends Solution1{
 
     viewingDistanceFromLeft() {
         let viewingDistance = 0;
-        let v = 1;
+        let v = 0;
         for (let x = this.col - 1; x >= 0; x--, v++) {
             if (this.grid[this.row][x].size >= this.currTreeSize) {
-                if (viewingDistance === 0) viewingDistance = v;
+                if (viewingDistance === 0) viewingDistance = v+1;
             }
         }
-        return viewingDistance > 0 ? viewingDistance : (v - 1);
+        return viewingDistance > 0 ? viewingDistance : v;
     }
 
     viewingDistanceFromRight() {
         let viewingDistance = 0;
-        let v = 1;
+        let v = 0;
         for (let x = this.col + 1; x < this.gridCols; x++, v++) {
             if (this.grid[this.row][x].size >= this.currTreeSize) {
-                if (viewingDistance === 0) viewingDistance = v;
+                if (viewingDistance === 0) viewingDistance = v+1;
             }
         }
-        return viewingDistance > 0 ? viewingDistance : (v - 1);
+        return viewingDistance > 0 ? viewingDistance : v;
     }
 
     viewingDistanceFromTop() {
         let viewingDistance = 0;
-        let v = 1;
+        let v = 0;
         for (let y = this.row - 1; y >= 0; y--, v++) {
             if (this.grid[y][this.col].size >= this.currTreeSize) {
-                if (viewingDistance === 0) viewingDistance = v;
+                if (viewingDistance === 0) viewingDistance = v+1;
             }
         }
-        return viewingDistance > 0 ? viewingDistance : (v - 1);
+        return viewingDistance > 0 ? viewingDistance : v;
     }
 
     viewingDistanceFromBottom() {
         let viewingDistance = 0;
-        let v = 1;
+        let v = 0;
         for (let y = this.row + 1; y < this.gridRows; y++, v++) {
             if (this.grid[y][this.col].size >= this.currTreeSize) {
-                if (viewingDistance === 0) viewingDistance = v;
+                if (viewingDistance === 0) viewingDistance = v+1;
             }
         }
-        return viewingDistance > 0 ? viewingDistance : (v - 1);
+        return viewingDistance > 0 ? viewingDistance : v;
     }
 
     showResults() {
