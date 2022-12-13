@@ -4,5 +4,5 @@ const r = getFileReader(user_file);
 
 const solution = new Solution1();
 r.on('line', function (text) {
-    solution.processNoteLine(text);
+    solution.processTerrainLine(text);
 });
