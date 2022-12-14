@@ -1,5 +1,5 @@
 const { getFileReader, Solution1 } = require('./lib');
-const user_file = './terrain.data';
+const user_file = '/Users/benwilfred/source/repos/adventOfcode/src/advent12/terrain.data';
 const r = getFileReader(user_file);
 
 const solution = new Solution1();
