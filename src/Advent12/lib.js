@@ -337,8 +337,9 @@ class Solution1 {
                 }
             }
             //this.trails.push([...trail]);
-            console.log({ popped: trail.pop() });
-            console.log({shortestTrail: this.shortestTrail});
+            // console.log({ popped: trail.pop() });
+            trail.pop();
+            // console.log({shortestTrail: this.shortestTrail});
             return true;
         }
 

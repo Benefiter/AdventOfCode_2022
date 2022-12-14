@@ -1,8 +1,8 @@
 const { getFileReader, Solution1 } = require('./lib');
-const user_file = './notes.data';
+const user_file = './lists.data';
 const r = getFileReader(user_file);
 
 const solution = new Solution1();
 r.on('line', function (text) {
-    solution.processNoteLine(text);
+    solution.processListLine(text);
 });
