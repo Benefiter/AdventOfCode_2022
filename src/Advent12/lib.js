@@ -326,9 +326,9 @@ class Solution1 {
         // this.checkForDuplicateTrail(trail);
 
         if (end) {
-            console.log('found end and pushed trail to storage');
+            console.log({end, trailLength: trail.length + 1, shortestTrail: this.shortestTrail.length});
             trail.push({ x, y, direction });
-            if (this.trails.length === 0){
+            if (this.shortestTrail.length === 0){
                 this.shortestTrail = [...trail];
             }else{
                 if (trail.length < this.shortestTrail.length){

@@ -1,5 +1,5 @@
 const { getFileReader, Solution2 } = require('./lib');
-const user_file = './lists.data';
+const user_file = './paths.data';
 const r = getFileReader(user_file);
 
 const solution = new Solution2();
