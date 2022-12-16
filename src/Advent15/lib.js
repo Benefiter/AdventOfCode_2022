@@ -24,6 +24,8 @@ class Solution1 {
         this.noBeaconInDeviceRange = '#';
         this.xTrueOffset = 0;
         this.yTrueOffset = 0;
+        this.rowOfInterest = 2000000;
+        this.results = new Set();
     }
 
     showResults() {
@@ -35,13 +37,8 @@ class Solution1 {
             xOffset: this.xOffset,
             yOffset: this.yOffset
         });
-        this.deviceGrid.forEach((r, index) => {
-            let row = '';
-            r.forEach(c => {
-                row += c;
-            })
-            console.log(`row${index} ${row}`);
-        })
+
+        console.log(`row ${this.rowOfInterest} = ${this.results.size}`);
     }
 
     finishedProcessing(text) {
@@ -102,17 +99,8 @@ class Solution1 {
         this.xTrueOffset = this.minX < 0 ? -1 * this.minX : 0;
         this.yTrueOffset = this.minY < 0 ? -1 * this.minY : 0;
 
-        this.xOffset = 100;
-        this.yOffset = 100;
-
-        let deviceRow = [];
-        for (let x = 0; x <= (this.maxX + (2 * this.xOffset)); x++) {
-            deviceRow.push(this.empty);
-        }
-
-        for (let y = 0; y <= (this.maxY + (2 * this.yOffset)); y++) {
-            this.deviceGrid.push([...deviceRow]);
-        }
+        this.xOffset = 0;
+        this.yOffset = 0;
     }
 
     setBeaconRangeIndicator(x, y) {
@@ -122,45 +110,70 @@ class Solution1 {
         // }
         // console.log(`******* processing ${x}, ${y}`);
 
-        if (this.deviceGrid[y][x] === this.empty) {
-            this.deviceGrid[y][x] = this.noBeaconInDeviceRange;
-            // console.log(`set ${x},${y} to ${this.deviceGrid[y][x]}`);
+        if (y === this.rowOfInterest) {
+            const hasSensorAtLocation = this.sensorCoords.some(s => {
+                return ((s.x === x) && (s.y === y));
+            });
+            const hasDeviceAtLocation = hasSensorAtLocation || this.beaconCoords.some(s => {
+                return ((s.x === x) && (s.y === y));
+            });
+            if (!hasDeviceAtLocation) {
+                const item = `${x}_${y}`;
+                if (!this.results.has(item)){
+                    this.results.add(item);
+                    // console.log({setSize: this.results.size});
+                }
+            }
         }
     }
 
     setNoCloseBeaconInRangeState({ x, y }, manhattan) {
+        if (y > this.rowOfInterest) {
+            if ((y - manhattan) <= this.rowOfInterest) {
+                //continue...
+            } else {
+                return;
+            }
+        } else {
+            if ((y + manhattan) >= this.rowOfInterest) {
+                //continue...
+            } else {
+                return;
+            }
+        }
         this.setBeaconRangeIndicator(x, y - manhattan)
-        this.showResults();
         const manhattanRange = [];
         for (let m = manhattan - 1; m > 0; m--) {
             manhattanRange.push(m);
         }
         // console.log({manhattan, manhattanRange});
         for (let j = 1; j < manhattan; j++) {
-            const xRange = manhattanRange[j - 1];
-            for (let i = (-1 * xRange); i <= xRange; i++) {
-                this.setBeaconRangeIndicator(x + i, y - j);
+            if ((y - j === this.rowOfInterest)) {
+                const xRange = manhattanRange[j - 1];
+                for (let i = (-1 * xRange); i <= xRange; i++) {
+                    this.setBeaconRangeIndicator(x + i, y - j);
+                }
             }
         }
-        this.showResults();
 
-        for (let i = x - manhattan; i <= x + manhattan; i++) {
-            this.setBeaconRangeIndicator(i, y);
+        if ((y === this.rowOfInterest)) {
+            for (let i = x - manhattan; i <= x + manhattan; i++) {
+                this.setBeaconRangeIndicator(i, y);
+            }
         }
 
-        this.showResults();
-
         for (let j = 1; j < manhattan; j++) {
-            const xRange = manhattanRange[j - 1];
-            for (let i = (-1 * xRange); i <= xRange; i++) {
-                this.setBeaconRangeIndicator(x + i, y + j);
+            if ((y + j === this.rowOfInterest)) {
+                const xRange = manhattanRange[j - 1];
+                for (let i = (-1 * xRange); i <= xRange; i++) {
+                    this.setBeaconRangeIndicator(x + i, y + j);
+                }
             }
         }
         // this.showResults();
 
         this.setBeaconRangeIndicator(x, y + manhattan);
 
-        this.showResults();
         console.log(`sensor at ${x}, ${y}`);
 
     }
@@ -170,8 +183,7 @@ class Solution1 {
     }
 
     setNoBeaconsCoverageForSensors() {
-        const listAdjusted = this.adjustSensorLocations();
-        listAdjusted.forEach((s, index) => {
+        this.sensorCoords.forEach((s, index) => {
             this.setNoCloseBeaconInRangeState(s, this.manhattan[index]);
         })
     }
@@ -180,7 +192,7 @@ class Solution1 {
         if (this.finishedProcessing(text)) {
             // console.log({manhattanVals: this.manhattan});
             this.createDeviceGrid();
-            this.populateGridWithDevices();
+            // this.populateGridWithDevices();
             this.setNoBeaconsCoverageForSensors();
             this.showResults();
         } else {
