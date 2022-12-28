@@ -13,14 +13,17 @@ class Solution1 {
         this.left = '<';
         this.empty = ' ';
         this.rock = '#';
+        this.displayEmpty = '.';
         this.rocks = [];
         this.chamber = new Map();
         this.emptyChamberRow = [this.empty, this.empty, this.empty, this.empty, this.empty, this.empty, this.empty];
+        this.fullChamberRow = [this.rock, this.rock, this.rock, this.rock, this.rock, this.rock, this.rock];
+        this.fullDisplayRow = [this.displayEmpty, this.displayEmpty, this.displayEmpty, this.displayEmpty, this.displayEmpty, this.displayEmpty, this.displayEmpty];
         this.maxRocks = 2022;
         this.nextRockMinChamberGap = 3;
         this.jetPatternPos = 0;
-        this.chamberTop = 0;
-        this.currentRockBottom = 3;
+        this.chamberTop = 1;
+        this.currentRockBottom = 4;
         this.chamberWidth = this.emptyChamberRow.length;
         this.stillMoving = false;
     }
@@ -35,9 +38,11 @@ class Solution1 {
 
     processLine(text) {
         this.jetPattern.push(...(text.split('')).map(i => i === '>' ? 1 : -1));
+        console.log({jetPatternLength: this.jetPattern.length - 1});
     }
 
     initChamber() {
+        this.chamber.set(0, [...this.fullChamberRow]);
         this.chamber.set(1, [...this.emptyChamberRow]);
         this.chamber.set(2, [...this.emptyChamberRow]);
         this.chamber.set(3, [...this.emptyChamberRow]);
@@ -59,7 +64,7 @@ class Solution1 {
     chamberIsEmpty(row, col) {
         const chamberRow = this.chamber.get(row);
         if (!chamberRow) return true;
-        return chamberRow[col] === ' ';
+        return chamberRow[col] === this.empty;
     }
 
     updateChamber(rock) {
@@ -77,10 +82,6 @@ class Solution1 {
             }
             chamberRow++;
         })
-        const potentialChamberTop = this.currentRockBottom + (rock.length - 1);
-        if (this.chamberTop < potentialChamberTop) {
-            this.chamberTop = potentialChamberTop;
-        }
     }
 
     updateRockPositionWithCollisionCheck(rock) {
@@ -94,13 +95,21 @@ class Solution1 {
         } else {
             this.currentRockBottom--;
         }
+        // } else {
+        //     if (this.currentRockBottom === 1){
+        //         this.stillMoving = false;
+        //         this.updateChamber(rock);
+        //     } else {
+        //         this.currentRockBottom--;
+        //     }
+        // }
     }
 
     applyJetToRock(offset, rock) {
         if (!rock.some(limb => {
             return limb.some((val) => {
-                return ((val + offset) >= (this.chamberWidth - 1) ||
-                    (val + offset) < 0);
+                return (((val + offset) > (this.chamberWidth - 1) ||
+                    (val + offset) < 0) || !this.chamberIsEmpty(this.currentRockBottom, val + offset));
             })
         })) {
             rock.forEach(limb => {
@@ -109,43 +118,65 @@ class Solution1 {
                 })
             })
         }
-        if (this.currentRockBottom <= (this.chamberTop + 1)) {
-            this.updateRockPositionWithCollisionCheck(rock);
-            return;
-        }
+    }
 
-        this.currentRockBottom--;
+    showChamber(){
+        console.clear();
+        for (let row = this.chamber.size - 1; row >= 1; row--){
+            const chamberRow = this.chamber.get(row);
+            let rowVal = [...this.fullDisplayRow];
+            chamberRow.forEach((col, index) => {
+                rowVal[index] = col === this.rock ? this.rock : this.displayEmpty;
+            });
+            let stringVal = '';
+            rowVal.forEach(rv => {
+                stringVal = stringVal+rv
+            });
+            console.log(stringVal);
+        }
+    }
+
+    moveRockDown(rock){
+        this.updateRockPositionWithCollisionCheck(rock);
     }
 
     processRockUntilRest(rock) {
         this.stillMoving = true;
-        let jetsApplied = 0;
-        this.currentRockBottom = this.chamberTop + 3;
         while (this.stillMoving) {
-            if (this.jetPatternPos === this.jetPattern.length - 1) {
+            if (this.jetPatternPos > this.jetPattern.length - 1) {
                 this.jetPatternPos = 0;
+            } else {
+                this.jetPatternPos++;
             }
             const offset = this.jetPattern[this.jetPatternPos];
-            this.jetPatternPos++;
 
             this.applyJetToRock(offset, rock);
-
-            jetsApplied++;
+            this.moveRockDown(rock);
         }
+        this.chamberTop = this.currentRockBottom + (rock.length);
+        this.currentRockBottom = (this.chamber.size) + 4;
+        // this.showChamber();
+
     }
 
     simulateRockFall() {
         let rockNumber = 1;
         let rockStyle = 0;
+        let currentRock;
         while (rockNumber <= this.maxRocks) {
 
-            this.processRockUntilRest(this.rocks[rockStyle]);
+            if (rockNumber === 9){
+                console.log('is 9');
+            }
+            currentRock = this.rocks[rockStyle].map(row => ([...row]))
+            this.processRockUntilRest(currentRock);
 
             if (rockStyle === (this.rocks.length - 1)) {
                 rockStyle = 0;
             } else {
                 rockStyle++;
             }
+            rockNumber++
         }
     }
 

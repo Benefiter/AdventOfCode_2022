@@ -9,27 +9,23 @@ const getFileReader = (file) => {
 class Solution1 {
     constructor() {
         this.valveSystem = new Map();
-        this.valveState = [] // {isOpen: bool, minuteOpened, totalPressureReleased: 0};
-        this.valveStates = [];
-        this.paths = [['AA']];
-        this.initialTimeMax = 18;
+        this.paths = [{ valve: 'AA', time: 1, totalPressure: 0, openedValves: []}];
         this.maxTime = 30;
         this.maxPressureReleased = 0;
-        this.currentExecution = [];
-        this.currentValvesOpened = [];
         this.maxPressurePath = [];
+        this.pressurePaths = [];
     }
 
     showResults() {
-        console.log({path: this.maxPressurePath});
-        console.log({maxPressureReleased: this.maxPressureReleased});
+        console.log({ path: this.maxPressurePath });
+        console.log({ maxPressureReleased: this.maxPressureReleased });
     }
 
     finishedProcessing(text) {
         return text.startsWith('end');
     }
 
-    processValve(text) {
+    addValve(text) {
         //Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
         let data = text.replace('tunnels', 'tunnel');
         data = data.replace('leads', 'lead');
@@ -44,104 +40,81 @@ class Solution1 {
         this.valveSystem.set(valveSystemItem.name, valveSystemItem);
     }
 
-    findBestPressure() {
+    calcPressure(pathSpec, nextValve, fm = false) {
+        let forceMove = fm;
+        let time = pathSpec.time;
+        let totalPressure = pathSpec.totalPressure;
+        const { openedValves } = pathSpec;
 
-    }
-
-    setInitialPaths(time) {
-        const newPaths = [];
-        this.paths.forEach(x => {
-            const nextPaths = this.valveSystem.get(x[x.length - 1]).otherTunnels;
-            nextPaths.forEach(i => {
-                const newPath = [...x]
-                newPath.push(i);
-                newPaths.push(newPath);
-            })
-        })
-        this.paths = newPaths;
-        if (time < this.initialTimeMax) {
+        const valve = this.valveSystem.get(nextValve);
+        if (forceMove || openedValves.includes(valve.name)) {
             time++;
-            this.setInitialPaths(time);
+        } else if (valve.flowRate > 0) {
+            time++;
+            openedValves.push(nextValve);
+            totalPressure += (valve.flowRate * (this.maxTime - time));
+            time++;
+        } else {
+            time++;
         }
-    }
 
-    addRemainingPaths(initialTime) {
-        const updatedPaths = [];
-        this.currentNewPaths.forEach(x => {
-            const nextPaths = this.valveSystem.get(x[x.length - 1]).otherTunnels;
-            nextPaths.forEach(i => {
-                const newPath = [...x]
-                newPath.push(i);
-                updatedPaths.push(newPath);
-            })
-        })
-
-        this.currentNewPaths = [...updatedPaths];
-        if (initialTime < this.maxTime) {
-            this.addRemainingPaths((initialTime + 1));
+        if (this.maxPressureReleased < totalPressure) {
+            this.maxPressureReleased = totalPressure;
+            console.log({ maxSoFar: totalPressure });
         }
-    }
+        pathSpec.time = time;
+        pathSpec.totalPressure = totalPressure;
+        pathSpec.openedValves = [...openedValves];
+        pathSpec.valve = nextValve;
 
-    calcPressures(path) {
-        let time = 1;
-        let pathIndex = 0;
-        let state = 'open';
-        this.currentValvesOpened = [];
-        this.currentExecution = [];
-        while (time < this.maxTime) {
-            switch (state) {
-                case 'open':
-                    const valve = this.valveSystem.get(path[pathIndex]);
-                    if (this.currentValvesOpened.includes(valve.name)) {
-                        state = 'move';
-                    } else if (valve.flowRate > 0) {
-                        time++;
-                        this.currentValvesOpened.push(valve.name);
-                        this.currentExecution.push(valve.flowRate * (this.maxTime - time));
-                        state = 'move';
-                    } else {
-                        state = 'move';
-                    }
-                    break;
-                case 'move':
-                    pathIndex++;
-                    time++;
-                    state = 'open';
-                    break;
-                default:
-                    console.log(`Unknown state ${state}`);
-                    break;
+        if (time <= this.maxTime) {
+            if (this.maxPressureReleased < totalPressure) {
+                this.maxPressureReleased = totalPressure;
+                console.log({ completedMaxPressureReleased: this.maxPressureReleased });
             }
-        }
-        const totalPressReleased = this.currentExecution.reduce((acc, curr) => {
-            acc += curr;
-            return acc;
-        }, 0)
-        if (this.maxPressureReleased < totalPressReleased) {
-            this.maxPressureReleased = totalPressReleased;
-            this.maxPressurePath = path;
-            console.log({maxSoFar: totalPressReleased});
+            const nextPaths = this.valveSystem.get(nextValve).otherTunnels;
+            nextPaths.forEach((i) => {
+                let currPath = { ...pathSpec, openedValves: [...openedValves] };
+                let currPath1 = { ...pathSpec, openedValves: [...openedValves] };
+                let nv = i;
+                while (this.calcPressure(currPath, nv)) {
+                    // newPaths.push(newPath);
+                }
+                while (this.calcPressure(currPath1, nv, true)) {
+                    // newPaths.push(newPath);
+                }
+
+                // console.log({completed: i});
+            })
+            return false;
+        } else {
+            return false;
         }
     }
 
-    findAllPaths() {
-        // Find all possible paths in 30 minutes all starting from AA
-        let startTime = 1;
-        this.setInitialPaths(startTime);
-        this.paths.forEach(p => {
-            this.currentNewPaths = [[...p]];
-            this.addRemainingPaths(this.initialTimeMax,);
-            this.currentNewPaths.forEach(tip => this.calcPressures(tip));
-        })
+    setupDistribution(paths) {
+        if (paths.length > 0) {
+            paths.forEach(x => {
+                const { valve } = x;
+                const nextPaths = this.valveSystem.get(valve).otherTunnels;
+                nextPaths.forEach((i) => {
+                    if (this.calcPressure(x, i)) {
+                        // const newPath = { ...x, openedValves: [...x.openedValves] };
+                        // this.pressurePaths.push([newPath]);
+                    }
+                    console.log({ doneOutterX: x, doneOutterI: i });
+                })
+            })
+        }
     }
 
     processValveData(text) {
         if (this.finishedProcessing(text)) {
-            this.findAllPaths();
-            this.findBestPressure();
+            this.setupDistribution(this.paths);
+            // this.findBestPressure();
             this.showResults();
         } else {
-            this.processValve(text);
+            this.addValve(text);
         }
     }
 }
