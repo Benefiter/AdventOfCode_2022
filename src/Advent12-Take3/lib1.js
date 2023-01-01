@@ -18,9 +18,10 @@ class Point {
 
 // A data structure for queue used in BFS
 class queueNode {
-    constructor(pt, dist) {
+    constructor(pt, dist, trail) {
         this.pt = pt // The coordinates of the cell
         this.dist = dist // Cell's distance from the source
+        this.trail = trail
     }
 }
 
@@ -41,9 +42,12 @@ class Solution1 {
     }
 
     moveIsAllowed(from, to) {
-        if (to === 'S') return false;
+        if (to === 'S') {
+            return false;
+        }
         const fromIndex = this.terrainIndex.indexOf(from);
         const toIndex = this.terrainIndex.indexOf(to);
+
         return (toIndex <= (fromIndex + 1));
     }
 
@@ -89,6 +93,22 @@ class Solution1 {
             (col >= 0) && (col < this.rowLen)
     }
 
+    draw( result, trail ){
+
+        trail.forEach(t => {
+            const {row, col} = t;
+            result[row][col] = true;
+        })
+
+        result.forEach(row => {
+            let rowStr = '';
+            row.forEach(col => {
+                rowStr = rowStr + (col ? 'x' : '.');
+            })
+            console.log(rowStr);
+        })
+
+    }
 // Function to find the shortest path between
 // a given source cell to a destination cell.
     BFS( src, dest) {
@@ -99,6 +119,7 @@ class Solution1 {
             return -1
 
         let visited = new Array(this.rowCount).fill(false).map(() => new Array(this.rowLen).fill(false));
+        let result = new Array(this.rowCount).fill(false).map(() => new Array(this.rowLen).fill(false));
 
         // Mark the source cell as visited
         visited[src.x][src.y] = true
@@ -107,7 +128,7 @@ class Solution1 {
         let q = []
 
         // Distance of source cell is 0
-        let s = new queueNode(src, 0)
+        let s = new queueNode(src, 0, [{row: src.x, col: src.y}])
         q.push(s) // Enqueue source cell
 
         // Do a BFS starting from source cell
@@ -119,6 +140,8 @@ class Solution1 {
             // we are done
             let pt = curr.pt
             if (pt.x === dest.x && pt.y === dest.y){
+                console.log({trail: curr.trail});
+                this.draw(result, curr.trail);
                 return curr.dist;
             }
 
@@ -135,7 +158,7 @@ class Solution1 {
                     if (this.moveIsAllowed(moveFrom, moveTo) && !visited[row][col]) {
                         visited[row][col] = true
                         let Adjcell = new queueNode(new Point(row, col),
-                            curr.dist + 1)
+                            curr.dist + 1, [...curr.trail, {row, col}])
                         q.push(Adjcell)
                     }
                 }
